@@ -1,0 +1,96 @@
+`include "Key_Expansion.v"
+`include "Round_1_to_9.v"
+`include "Final_Round.v"
+`include "Add_Round_Keys.v"
+`include "Subbytes.v"
+`include "Shift_Rows.v"
+`include "Mix_Column.v"
+
+module AES_TOP #(
+  parameter PLAINTEXT_WIDTH = 128,
+  parameter KEY_WIDTH  = 128,
+  parameter NUM_TOTAL_ROUNDS = 11,
+  parameter NUM_ROUNDS = 9
+)(
+  input                        i_clk,
+  input                        i_reset,
+  input                        i_START,
+  input  [PLAINTEXT_WIDTH-1:0] i_PLAINTEXT,
+  input  [KEY_WIDTH-1:0]       i_KEY,
+
+  output [PLAINTEXT_WIDTH-1:0] o_CIPHERTEXT,
+  output                       o_DONE
+);
+
+  // ----------- Signals for Output ------------------------
+  reg done; 
+  reg [PLAINTEXT_WIDTH-1:0] Cipher;
+
+  // ----------- Signal for key Storage --------------------
+  reg  [NUM_TOTAL_ROUNDS*KEY_WIDTH-1:0] Round_Keys;
+  reg  [5:0] Round_Count;
+  wire [KEY_WIDTH-1:0] RM_key;
+
+  //---------------- Output Stage ----------------
+  always @(posedge i_clk or negedge i_reset) begin
+    if (i_reset) begin
+      Cipher <= 128'b0;
+      done   <= 1'b0;
+    end 
+    else begin
+      Cipher <= Round_D[NUM_ROUNDS];
+      done   <= Round_V[NUM_ROUNDS];
+    end
+  end
+
+  //-------------------- KEY SELECTION --------------------------
+    always @(*) begin
+    case(Round_Count)
+      6'd1: RM_key = Round_Keys[1279:1152];
+      6'd5: RM_key = Round_Keys[1151:1024]; 
+      6'd9: RM_key = Round_Keys[1023:896]; 
+      6'd13: RM_key = Round_Keys[895:768]; 
+      6'd17: RM_key = Round_Keys[767:640]; 
+      6'd21: RM_key = Round_Keys[639:512]; 
+      6'd25: RM_key = Round_Keys[511:384]; 
+      6'd29: RM_key = Round_Keys[383:256]; 
+      6'd33: RM_key = Round_Keys[255:128]; 
+      default: RM_key = 128'd0; endcase
+  end
+
+  // ---------- Valid Signals for Instances -------------------
+  wire  valid_KE_to_add;
+  wire  valid_add_to_RM;
+  wire  valid_RM_to_FM;
+
+  // ------------ Output Signals for Instances -----------------
+  wire  [PLAINTEXT_WIDTH-1:0]  Pt_add_to_RM;
+  wire  [PLAINTEXT_WIDTH-1:0]  Pt_RM_to_FM;
+
+  // ------------------- Instance --------------------------------
+  Key_Expansion KE (.i_clk(i_clk),    .i_reset(i_reset), 
+                    .i_KE_key(i_KEY), .o_KE_Keys(Round_Keys),
+                    .i_key_v(i_START),.o_key_v(valid_KE_to_add));
+
+  Add_Round_key ARK (.i_clk(i_clk), .i_reset(i_reset), 
+                     .i_r_key(Round_Key[1407:1280]),
+                     .i_ak_p(i_PLAINTEXT),
+                     .o_ak_p(Pt_add_to_RM),
+                     .i_ak_v(valid_KE_to_add), 
+                     .o_ak_v(valid_add_to_RM));  
+
+  ROUND_1_TO_9  RM (.i_clk(i_clk),  .i_reset(i_reset),
+                    .i_R_valid(valid_add_to_RM),
+                    .i_R_PT(Pt_add_to_RM),
+                    .i_round_key(RM_key),
+                    .o_R_PT(Pt_RM_to_FM),
+                    .o_R_valid(valid_RM_to_FM),
+                    .o_Round_count(Round_Count));
+
+  FINAL_ROUND  FM ( .i_clk(i_clk), .i_reset(i_reset),
+                    .i_FR_validin(valid_RM_to_FM),
+                    .i_FR_PT(Pt_RM_to_FM),
+                    .i_FR_key(Round_Key[127:0]),
+                    .o_FR_PT(o_CIPHERTEXT),
+                    .o_FR_valid(o_DONE));
+endmodule
