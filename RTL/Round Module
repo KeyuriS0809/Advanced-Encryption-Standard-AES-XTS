@@ -1,0 +1,95 @@
+`include "Add_Round_Key.v"
+`include "Subbytes.v"
+`include "Shift_Rows.v"
+`include "Mix_Column.v"
+
+module ROUND_1_TO_9 #(
+  parameter PLAINTEXT_WIDTH = 128,
+  parameter KEY_WIDTH  = 128,
+  parameter NUM_TOTAL_ROUNDS = 11,
+  parameter NUM_ROUNDS = 9
+)(
+  input                       i_clk,
+  input                       i_reset,
+  input                       i_R_valid,
+  input  [PLAINTEXT_WIDTH-1:0] i_R_PT,
+  input  [NUM_TOTAL_ROUNDS*KEY_WIDTH-1:0] i_round_key,
+
+  output [PLAINTEXT_WIDTH-1:0] o_R_PT,
+  output                       o_R_valid
+);
+
+  //----------------Registers ----------------
+  reg [127:0] Round_data [0:1];
+  reg         Round_valid[0:1];
+
+  wire [127:0] Round_D [0:NUM_ROUNDS];
+  wire         Round_V [0:NUM_ROUNDS];
+
+  reg   R_valid;
+  reg  [PLAINTEXT_WIDTH-1:0] R_Pt;
+
+  //------------- wire to reg logic ----------------------
+  assign Round_D[0] = Round_data[0];
+  assign Round_V[0] = Round_valid[0];
+
+  assign  o_R_PT    = R_Pt;
+  assign  o_R_valid = R_valid;
+
+  // --------------- Input Stage --------------
+  always @(posedge i_clk or negedge i_reset) begin
+    if (i_reset) begin
+      Round_data[0]  <= 128'd0;
+      Round_valid[0] <= 1'b0;
+    end
+    else begin
+      if (i_R_valid) begin
+        Round_data[0]  <= i_R_PT;
+        Round_valid[0] <= i_R_valid;
+      end
+      else begin
+        Round_data[0]  <= 1'b0;
+        Round_valid[0] <= 1'b0;
+      end
+    end
+  end
+
+  //---------------- Output Stage ----------------
+  always @(posedge i_clk or negedge i_reset) begin
+    if (i_reset) begin
+      R_Pt    <= 128'd0;
+      R_valid <= 1'b0;
+    end
+    else begin
+      R_Pt    <= Round_D[NUM_ROUNDS];
+      R_valid <= Round_V[NUM_ROUNDS];
+    end
+  end
+
+  //---------------- Generate 9 rounds ----------------
+  genvar i;
+  generate
+    for(i = 1; i <= NUM_ROUNDS; i = i + 1) begin : ROUND_BLOCK
+      wire                       R_V [0:NUM_ROUNDS];
+      wire [PLAINTEXT_WIDTH-1:0] sb_out;
+      wire [PLAINTEXT_WIDTH-1:0] sr_out;
+      wire [PLAINTEXT_WIDTH-1:0] mc_out;
+      //       wire [PLAINTEXT_WIDTH-1:0] ark_out;
+      wire [KEY_WIDTH-1:0] round_key;
+      wire sb_valid;
+      wire sr_valid;
+      wire mc_valid;
+//       wire sb_valid;
+
+      // -------- Round key --------
+      assign round_key = i_round_key[(1407 - i*128) -: 128];
+      assign Round_V[i] = R_V[i];
+
+      // -------- Combinational blocks --------
+      Subbyte   SB (.i_clk(i_clk),.i_reset(i_reset),.i_sb_p(Round_D[i-1]), .o_sb_p(sb_out), .i_sb_v(Round_V[i-1]), .o_sb_v(sb_valid));
+      ShiftRows SR (.i_clk(i_clk),.i_reset(i_reset),.i_sr_p(sb_out), .o_sr_p(sr_out), .i_sr_v(sb_valid), .o_sr_v(sr_valid));
+      MixColumn MC (.i_clk(i_clk),.i_reset(i_reset),.i_mc_p(sr_out), .o_mc_p(mc_out), .i_mc_v(sr_valid), .o_mc_v(mc_valid));
+      Add_Round_key ARK (.i_clk(i_clk),.i_reset(i_reset),.i_ak_p(mc_out),.i_r_key(round_key),.o_ak_p(Round_D[i]),.i_ak_v(mc_valid),.o_ak_v(R_V[i]));
+    end
+  endgenerate
+endmodule
