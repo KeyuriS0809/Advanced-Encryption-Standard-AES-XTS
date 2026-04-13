@@ -1,0 +1,88 @@
+module MixColumn #(
+  parameter PLAINTEXT_WIDTH  = 128,
+  parameter WORD_WIDTH = 32,
+  parameter NUM_WORDS = 4
+)(
+  input                      i_clk,
+  input                      i_reset,
+  input                      i_mc_v,
+  output                     o_mc_v,
+  input  [PLAINTEXT_WIDTH-1:0] i_mc_p,
+  output [PLAINTEXT_WIDTH-1:0] o_mc_p
+);
+  //--------------------- 4 WORDS -----------------------
+  reg [WORD_WIDTH-1:0] W [0:NUM_WORDS-1];
+  reg [WORD_WIDTH-1:0] W_new [0:NUM_WORDS-1];
+  reg [(WORD_WIDTH/4)-1:0] b [0:NUM_WORDS-1];
+  reg [(WORD_WIDTH/4)-1:0] b_new [0:NUM_WORDS-1];
+  integer i;
+  
+  //------------- wire to reg logic ----------------------
+  reg [PLAINTEXT_WIDTH-1:0] MC_P;
+  reg                       MC_V;
+  
+  assign o_mc_p = MC_P;
+  assign o_mc_v = MC_V;
+
+  //--------------------- OUTPUT LOGIC  -----------------------
+  always @(posedge i_clk or negedge i_reset) begin
+    if (i_reset) begin
+      MC_P <= {PLAINTEXT_WIDTH{1'b0}};
+      MC_V <= 1'b0;
+    end
+    else 
+      begin
+      if (i_mc_v) begin
+        MC_P <= {W_new[0],W_new[1],W_new[2],W_new[3]};
+        MC_V <= 1'b1;
+      end
+      else begin
+        MC_P <= {PLAINTEXT_WIDTH{1'b0}};
+        MC_V <= 1'b0;
+      end
+    end
+  end
+
+  //---------------- COMBINATIONAL KEY EXPANSION ----------------     
+  always @(*) begin
+    //------------- Initial (1st 4 words) --------------
+    W[0] = i_mc_p[PLAINTEXT_WIDTH-1 : PLAINTEXT_WIDTH-WORD_WIDTH];
+    W[1] = i_mc_p[PLAINTEXT_WIDTH-1-WORD_WIDTH : PLAINTEXT_WIDTH-2*WORD_WIDTH];
+    W[2] = i_mc_p[PLAINTEXT_WIDTH-1-2*WORD_WIDTH : PLAINTEXT_WIDTH-3*WORD_WIDTH];
+    W[3] = i_mc_p[PLAINTEXT_WIDTH-1-3*WORD_WIDTH : PLAINTEXT_WIDTH-4*WORD_WIDTH];
+
+    for(i=0; i < 4; i=i+1) begin
+      // ---------- Words Converts in Byte --------------
+      b[0] = W[i][31:24];
+      b[1] = W[i][23:16];
+      b[2] = W[i][15:8];
+      b[3] = W[i][7:0];
+
+      //------------ New Byts for New Word --------------
+      b_new[0] = xtime(b[0],2'b10) ^ xtime(b[1],2'b11) ^ b[2] ^ b[3];
+      b_new[1] = b[0] ^ xtime(b[1],2'b10) ^ xtime(b[2],2'b11) ^ b[3];
+      b_new[2] = b[0] ^ b[1] ^ xtime(b[2],2'b10) ^ xtime(b[3],2'b11);
+      b_new[3] = xtime(b[0],2'b11) ^ b[1] ^ b[2] ^ xtime(b[3],2'b10);
+      
+      //----------------- New Word -------------------
+      W_new[i] = {b_new[0], b_new[1], b_new[2], b_new[3]};
+    end
+  end
+
+  //----------------------- GF FUNCTION ------------------------------
+  function [7:0] xtime;
+    input [7:0] i_x;
+    input [1:0] sel;   // 2'b10 → multiply by 02, 2'b11 → multiply by 03
+    reg [7:0] o_x;
+    begin
+      // xtime (multiply by 02)
+      o_x = (i_x[7]) ? ((i_x << 1) ^ 8'h1b) : (i_x << 1);
+
+      case (sel)
+        2'b10: xtime = o_x;          // 02 · x
+        2'b11: xtime = o_x ^ i_x;    // 03 · x
+        default: xtime = i_x;       // 01 · x
+      endcase
+    end
+  endfunction
+endmodule
