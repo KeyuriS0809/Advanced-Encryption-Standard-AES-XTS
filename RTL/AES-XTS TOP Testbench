@@ -1,0 +1,179 @@
+module XTS_TOP_tb;
+  parameter BLOCK_NUMBER = 2;
+  parameter PLAINTEXT_WIDTH = 128 * BLOCK_NUMBER;
+  parameter KEY_WIDTH  = 128;
+  parameter CIPHERTEXT_WIDTH = 128;
+  reg   i_clk;
+  reg   i_reset;
+  reg   i_XTS_START;
+  wire  o_XTS_DONE;
+  reg  [BLOCK_NUMBER-1:0]  i_J;
+  reg  [KEY_WIDTH-1:0] i_KEY_1;
+  reg  [KEY_WIDTH-1:0] i_KEY_2;
+  reg  [CIPHERTEXT_WIDTH-1:0] i_SECTOR;
+  reg  [PLAINTEXT_WIDTH-1:0] i_XTS_PLAINTEXT;
+  wire [PLAINTEXT_WIDTH-1:0] o_XTS_CIPHERTEXT;
+  reg  [PLAINTEXT_WIDTH-1:0] Ex_Cipher;
+
+  XTS_TOP XTS_DUT (.i_clk(i_clk), .i_reset(i_reset),.i_KEY_1(i_KEY_1),.i_KEY_2(i_KEY_2), .i_XTS_PLAINTEXT(i_XTS_PLAINTEXT), .o_XTS_CIPHERTEXT(o_XTS_CIPHERTEXT), .i_XTS_START(i_XTS_START),.o_XTS_DONE(o_XTS_DONE),.i_SECTOR(i_SECTOR),.i_J( i_J));
+
+  always #5 i_clk = ~i_clk;
+
+  initial begin
+    initial_values(); 
+    Reset_valid_check(); 
+    $display("------------------------ Starting AES- XTS 128 Bit Verifications ---------------------------");
+    $display("--------------------------------------------------------------------------------------------");
+
+    TEST_1();
+    TEST_2();
+    TEST_3();
+
+    $display("--------------------------------------------------------------------------------------------");
+    $display("------------------------ AES- XTS 128 Bit Verification Ends --------------------------------");
+
+    #60 $finish;
+  end
+
+  //------------------- TASK for initial values -----------------------------  
+  task initial_values;
+    begin 
+      $dumpfile("dump.vcd"); $dumpvars;
+      i_clk = 0;
+      i_reset = 1;
+      i_XTS_START = 0;
+      i_XTS_PLAINTEXT = 128'b0;
+      i_J = 4'b0;
+      i_SECTOR = 128'b0;
+    end
+  endtask
+
+  task TEST_1();
+    begin
+      $display(" \n               -------------------------------------------------");
+      $display("                  ------------ TEST - 1  STARTS ------------------\n");
+      @(negedge i_clk);
+      i_reset = 0;
+
+      @(negedge i_clk);
+      i_J = 4'd2;
+      i_XTS_START = 1;
+      i_SECTOR = 128'h00000000_00000000_00000000_00000000;
+      i_XTS_PLAINTEXT = 256'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+      i_KEY_1 = 128'h00000000_00000000_00000000_00000000;
+      i_KEY_2 = 128'h00000000_00000000_00000000_00000000;
+
+      @(negedge i_clk);
+      i_XTS_START =  0;
+
+      repeat(89) @(negedge i_clk);
+      Output_Checker (1, 256'h917cf69e_bd68b2ec_9b9fe9a3_eadda692_00000000_00000000_00000000_00000000);
+
+      repeat(46) @(negedge i_clk);
+      Output_Checker (2, 256'h917cf69e_bd68b2ec_9b9fe9a3_eadda692_cd43d2f5_9598ed85_8c02c265_2fbf922e);
+
+      $display(" \n                ------------ TEST - 1 COMPLETED -----------------");
+      $display(" \n                -------------------------------------------------");
+    end
+  endtask
+
+  task TEST_2();
+    begin
+      $display(" \n                -------------------------------------------------");
+      $display("                   ------------ TEST - 2 STARTS -----------------\n ");
+
+      @(negedge i_clk);
+      i_reset = 1;
+      @(negedge i_clk);
+      i_reset = 0;
+
+      @(negedge i_clk);
+      i_XTS_START = 1;
+      i_SECTOR = 128'h33333333_33000000_00000000_00000000;
+      i_XTS_PLAINTEXT = 256'h44444444_44444444_44444444_44444444_44444444_44444444_44444444_44444444;
+      i_KEY_1 = 128'h11111111_11111111_11111111_11111111;
+      i_KEY_2 = 128'h22222222_22222222_22222222_22222222;
+
+      @(negedge i_clk);
+      i_XTS_START =  0;
+
+      repeat(89) @(negedge i_clk);
+      Output_Checker (1,256'hc454185e_6a16936e_39334038_acef838b_00000000_00000000_00000000_00000000);
+
+      repeat(46) @(negedge i_clk);
+      Output_Checker (2, 256'hc454185e_6a16936e_39334038_acef838b_fb186fff_7480adc4_289382ec_d6d394f0);
+      $display(" \n                ------------ TEST - 2 COMPLETED -----------------");
+      $display(" \n                -------------------------------------------------");
+    end
+  endtask
+
+  task TEST_3();
+    begin
+      $display(" \n                -------------------------------------------------");
+      $display("                   ------------ TEST - 3 STARTS ----------------- \n");
+
+      @(negedge i_clk);
+      i_reset = 1;
+      @(negedge i_clk);
+      i_reset = 0;
+
+      @(negedge i_clk);
+      i_XTS_START = 1;
+      i_SECTOR = 128'h33333333_33000000_00000000_00000000;
+      i_XTS_PLAINTEXT = 256'h44444444_44444444_44444444_44444444_44444444_44444444_44444444_44444444;
+      i_KEY_1 = 128'hfffefdfc_fbfaf9f8_f7f6f5f4_f3f2f1f0;
+      i_KEY_2 = 128'h22222222_22222222_22222222_22222222;
+
+      @(negedge i_clk);
+      i_XTS_START =  0;
+
+      repeat(89) @(negedge i_clk);
+      Output_Checker (1,256'haf85336b_597afc1a_900b2eb2_1ec949d2_00000000_00000000_00000000_00000000);
+
+      repeat(46) @(negedge i_clk);
+      Output_Checker (2, 256'haf85336b_597afc1a_900b2eb2_1ec949d2_92df4c04_7e0b2153_2186a597_1a227a89);
+      $display(" \n                  ------------ TEST - 3 COMPLETED -----------------");
+      $display(" \n                -------------------------------------------------");
+
+    end
+  endtask
+
+  //------------------ TASK TO CHECK RESET AND VALID BEHAVIOR --------------------
+  task Reset_valid_check();
+    begin
+      //------------------- RESET Status --------------------   
+      if (i_reset == 1)
+        $display("AES-XTS TOP's Reset is HIGH");
+      else
+        $display("AES-XTS TOP's Reset is LOW");
+
+      //------------------- Valid Status --------------------   
+      if (i_XTS_START == 1)
+        $display("AES-XTS TOP's valid is HIGH");
+      else
+        $display("AES-XTS TOP's valid is LOW");
+    end
+  endtask
+
+  //------------------------ TAST TO CHECK OUTPUT ------------------------------
+  task Output_Checker (input [2:0] Bn, input [PLAINTEXT_WIDTH-1:0] Ex_C);
+    begin
+      Ex_Cipher = Ex_C; 
+
+      $display("          Jth Block  = %d",Bn);
+      $display("            i_SECTOR = %h",i_SECTOR);
+      $display("            KEY - 1  = %h",i_KEY_1);
+      $display("            KEY - 2  = %h",i_KEY_2);
+      $display("    i_XTS_PLAINTEXT  = %h",i_XTS_PLAINTEXT);
+      $display("Expected Cipher text = %h",Ex_Cipher);
+      $display("    o_XTS_CIPHERTEXT = %h",o_XTS_CIPHERTEXT);
+
+      if (Ex_Cipher == o_XTS_CIPHERTEXT) begin
+        $display("                   ------------ AES - XTS BLOCK %d  PASS -----------",Bn);
+      end
+      else begin
+        $display("                    ------------ AES - XTS BLOCK %d  FAIL -----------",Bn);
+      end
+    end
+  endtask
+endmodule
