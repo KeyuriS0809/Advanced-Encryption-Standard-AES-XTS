@@ -36,7 +36,7 @@ module Add_Round_key #(
         AK_V <= 1'b1;
       end
       else begin
-        o_add_P  <= {PLAINTEXT_WIDTH{1'b0}};
+//        o_add_P  <= {PLAINTEXT_WIDTH{1'b0}};
         AK_V <= 1'b0;
       end
     end
