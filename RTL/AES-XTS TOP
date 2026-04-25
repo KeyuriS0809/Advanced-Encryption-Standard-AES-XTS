@@ -1,0 +1,115 @@
+`include "PRE_POST_XOR.v"
+`include "TWEAK_UPDATED.v"
+`include "AES_TOP.v"
+`include "Key_Expansion.v"
+`include "Final_Round.v"
+`include "Round_1_to_9.v"
+`include "Add_Round_Keys.v"
+`include "Subbytes.v"
+`include "Shift_Rows.v"
+`include "Mix_Column.v"
+
+module XTS_TOP #(
+  parameter BLOCK_NUMBER = 2,
+  parameter PLAINTEXT_WIDTH = 128 * BLOCK_NUMBER,
+  parameter KEY_WIDTH  = 128,
+  parameter CIPHERTEXT_WIDTH = 128
+)(
+  input                         i_clk,
+  input                         i_reset,
+  input                         i_XTS_START,
+  input  [BLOCK_NUMBER-1:0]     i_J,
+  input  [CIPHERTEXT_WIDTH-1:0] i_SECTOR,
+  input  [PLAINTEXT_WIDTH-1:0]  i_XTS_PLAINTEXT,
+  input  [KEY_WIDTH-1:0]        i_KEY_1,
+  input  [KEY_WIDTH-1:0]        i_KEY_2,
+
+  output [PLAINTEXT_WIDTH-1:0] o_XTS_CIPHERTEXT,
+  output                       o_XTS_DONE
+);
+  //------------ Output Signals For Instances -----------------
+  wire [CIPHERTEXT_WIDTH-1:0] tweak_0_pt;
+  wire [CIPHERTEXT_WIDTH-1:0] New_Tweak [0:BLOCK_NUMBER];
+  wire [CIPHERTEXT_WIDTH-1:0] Ciphertext_per_Block [0:BLOCK_NUMBER];  
+
+  //------------- Valid Signals For Instances -----------------
+  wire tweak_0_done;
+  wire  Block_valid [0:BLOCK_NUMBER];
+  wire  Tweak_valid [0:BLOCK_NUMBER];
+
+  assign New_Tweak [0] = tweak_0_pt;
+  assign Block_valid [0] = tweak_0_done;
+
+  // ------------------- Final Valid -------------------------
+  assign o_XTS_DONE = Block_valid[BLOCK_NUMBER];
+  assign o_XTS_CIPHERTEXT = {Ciphertext_per_Block[BLOCK_NUMBER - 1],Ciphertext_per_Block[BLOCK_NUMBER]};
+
+  //----------  Generate T0 = AES_Encryption (i, Key2) ----------------
+
+  AES_TOP tweak_generate (.i_clk(i_clk),    .i_reset(i_reset),
+    .i_aes_Start(i_XTS_START),
+    .i_aes_Plaintext(i_SECTOR),    // Sector Value i
+    .i_aes_Key(i_KEY_2),           // Key 2
+    .o_aes_Ciphertext(tweak_0_pt), // T0 
+    .o_aes_Done(tweak_0_done));
+
+
+    // ----------------------- ENCRYPT J BLOCKS ---------------------  
+    genvar i;
+    generate 
+      for ( i = 1; i <= BLOCK_NUMBER; i = i + 1) begin : J_TIME
+
+        // ------------------- Input Plaintext ---------------------
+        wire [CIPHERTEXT_WIDTH-1:0] Plaintext_per_Block;
+        wire [CIPHERTEXT_WIDTH-1:0] Pre_xor_PT;
+        wire [CIPHERTEXT_WIDTH-1:0] aes_Cipher_2;
+        wire [127:0] tweak_next;
+
+        // ---------------------- Valids -------------------------
+        wire Pre_xor_done;
+        wire aes_2_done;
+
+
+        assign Plaintext_per_Block = i_XTS_PLAINTEXT [(PLAINTEXT_WIDTH - (i*128)) + 127 -: 128];
+        assign New_Tweak[i] = tweak_next;
+
+
+        //---------------------- Tweak_upadate ----------------------
+        TWEAK_UPDATE new_tweak ( .i_clk(i_clk),    .i_reset(i_reset),
+          .i_tweak_v(Block_valid[i-1]),
+          .i_tweak_j(i_J),
+          .i_old_T(New_Tweak[i-1]),
+          .o_new_T(tweak_next),
+          .o_tweak_v(Tweak_valid[i]));                      
+
+          // ---------------Tweak's PRE-XOR with Plaintext ----------------------- 
+
+          PRE_POST_XOR  Pre_XOR (.i_clk(i_clk),    .i_reset(i_reset),
+            .i_xor_v(Block_valid[i-1]),
+            .i_TWEAK(New_Tweak[i-1]),
+            .i_xor_p(Plaintext_per_Block),
+            .o_xor_p(Pre_xor_PT),
+            .o_xor_v(Pre_xor_done));
+
+            // ----------- 2nd AES Encryption of xor' Plaintext with Key1 ----------
+            // ------------------- CC = AES_Encryption (PP,key1)--------------------
+
+            AES_TOP      Aes_2     (.i_clk(i_clk),    .i_reset(i_reset),
+              .i_aes_Start(Pre_xor_done),
+              .i_aes_Plaintext(Pre_xor_PT), // Pre XOR's Plaintext
+              .i_aes_Key(i_KEY_1),          // Key 1
+              .o_aes_Ciphertext(aes_Cipher_2), 
+              .o_aes_Done(aes_2_done));
+
+              // -------------- Tweak's POST-XOR with 2nd AES's Cipher -----------------
+
+              PRE_POST_XOR  Post_XOR (.i_clk(i_clk),    .i_reset(i_reset),
+                .i_xor_v(aes_2_done),
+                .i_TWEAK(New_Tweak[i-1]),
+                .i_xor_p(aes_Cipher_2),
+                .o_xor_p(Ciphertext_per_Block[i]),
+                .o_xor_v(Block_valid[i]));      
+
+      end
+    endgenerate
+endmodule
