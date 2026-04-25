@@ -1,8 +1,3 @@
-`include "Add_Round_Key.v"
-`include "Subbytes.v"
-`include "Shift_Rows.v"
-`include "Mix_Column.v"
-
 module ROUND_1_TO_9 #(
   parameter PLAINTEXT_WIDTH = 128,
   parameter KEY_WIDTH  = 128,
@@ -12,11 +7,12 @@ module ROUND_1_TO_9 #(
   input                       i_clk,
   input                       i_reset,
   input                       i_R_valid,
-  input  [PLAINTEXT_WIDTH-1:0] i_R_PT,
-  input  [NUM_TOTAL_ROUNDS*KEY_WIDTH-1:0] i_round_key,
+  input [PLAINTEXT_WIDTH-1:0] i_R_PT,
+  input [KEY_WIDTH-1:0] i_round_key,
 
   output [PLAINTEXT_WIDTH-1:0] o_R_PT,
-  output                       o_R_valid
+  output                       o_R_valid,
+  output                 [5:0] o_Round_count
 );
 
   //----------------Registers ----------------
@@ -25,8 +21,10 @@ module ROUND_1_TO_9 #(
 
   wire [127:0] Round_D [0:NUM_ROUNDS];
   wire         Round_V [0:NUM_ROUNDS];
+  wire [NUM_ROUNDS:0] R_V;
 
   reg   R_valid;
+  reg  [5:0] Rc;
   reg  [PLAINTEXT_WIDTH-1:0] R_Pt;
 
   //------------- wire to reg logic ----------------------
@@ -35,6 +33,7 @@ module ROUND_1_TO_9 #(
 
   assign  o_R_PT    = R_Pt;
   assign  o_R_valid = R_valid;
+  assign  o_Round_count = Rc;
 
   // --------------- Input Stage --------------
   always @(posedge i_clk or negedge i_reset) begin
@@ -50,6 +49,31 @@ module ROUND_1_TO_9 #(
       else begin
         Round_data[0]  <= 1'b0;
         Round_valid[0] <= 1'b0;
+      end
+    end
+  end
+  //-------------------- Round Counter ------------------------
+  reg running;
+  always @(posedge i_clk or negedge i_reset) begin
+    if (i_reset) begin
+      Rc      <= 0;
+      running <= 0;
+    end
+    else begin
+      // START condition
+      if (i_R_valid && !running) begin
+        Rc      <= 1;
+        running <= 1;
+      end
+
+      // RUNNING condition
+      else if (running) begin
+        if (Round_V[NUM_ROUNDS]) begin
+          running <= 0;     // stop
+        end
+        else begin
+          Rc <= Rc + 1;     // count
+        end
       end
     end
   end
@@ -70,19 +94,17 @@ module ROUND_1_TO_9 #(
   genvar i;
   generate
     for(i = 1; i <= NUM_ROUNDS; i = i + 1) begin : ROUND_BLOCK
-      wire                       R_V [0:NUM_ROUNDS];
+      //      wire                       R_V [0:NUM_ROUNDS];
       wire [PLAINTEXT_WIDTH-1:0] sb_out;
       wire [PLAINTEXT_WIDTH-1:0] sr_out;
       wire [PLAINTEXT_WIDTH-1:0] mc_out;
-      //       wire [PLAINTEXT_WIDTH-1:0] ark_out;
       wire [KEY_WIDTH-1:0] round_key;
       wire sb_valid;
       wire sr_valid;
       wire mc_valid;
-//       wire sb_valid;
 
       // -------- Round key --------
-      assign round_key = i_round_key[(1407 - i*128) -: 128];
+      assign round_key = i_round_key;
       assign Round_V[i] = R_V[i];
 
       // -------- Combinational blocks --------
