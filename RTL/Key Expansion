@@ -6,10 +6,10 @@ module Key_Expansion #(
 )(
   input                  i_clk,
   input                  i_reset,
-  input  [KEY_WIDTH-1:0] i_key,
-  input                  i_key_v,
-  output                 o_key_v,
-  output [NUM_TOTAL_ROUNDS*KEY_WIDTH-1:0] o_round_key
+  input  [KEY_WIDTH-1:0] i_KE_key,
+  input                  i_KE_v,
+  output                 o_KE_v,
+  output [NUM_TOTAL_ROUNDS*KEY_WIDTH-1:0] o_KE_key
 );
 //--------------------- 44 WORDS -----------------------
   reg [WORD_WIDTH-1:0] W [0:NUM_WORDS-1];
@@ -21,8 +21,8 @@ module Key_Expansion #(
   reg [NUM_TOTAL_ROUNDS*KEY_WIDTH-1:0] Key_E;
   reg                       KE_V;
   
-  assign     o_key_v = KE_V;
-  assign o_round_key = Key_E;
+  assign     o_KE_v = KE_V;
+  assign o_KE_key = Key_E;
   
 //--------------------- OUTPUT LOGIC  -----------------------
   always @(posedge i_clk or negedge i_reset) begin
@@ -31,14 +31,14 @@ module Key_Expansion #(
       KE_V  <= 1'b0;
     end
     else begin
-      if (i_key_v) begin
+      if (i_KE_v) begin
         KE_V  <= 1'b1;
         for (j = 0; j < NUM_TOTAL_ROUNDS; j = j + 1) begin
           Key_E[(NUM_TOTAL_ROUNDS*KEY_WIDTH-1) - j*KEY_WIDTH -: KEY_WIDTH] <= {W[4*j], W[4*j+1], W[4*j+2], W[4*j+3]};
         end
       end
       else begin
-        Key_E <= {(NUM_TOTAL_ROUNDS*KEY_WIDTH){1'b0}};
+       // Key_E <= {(NUM_TOTAL_ROUNDS*KEY_WIDTH){1'b0}};
         KE_V  <= 1'b0;
       end
     end
@@ -47,10 +47,10 @@ module Key_Expansion #(
 //---------------- COMBINATIONAL KEY EXPANSION ----------------     
   always @(*) begin
     //------------- Initial key (1st 4 words) --------------
-    W[0] = i_key[KEY_WIDTH-1 : KEY_WIDTH-WORD_WIDTH];
-    W[1] = i_key[KEY_WIDTH-1-WORD_WIDTH : KEY_WIDTH-2*WORD_WIDTH];
-    W[2] = i_key[KEY_WIDTH-1-2*WORD_WIDTH : KEY_WIDTH-3*WORD_WIDTH];
-    W[3] = i_key[KEY_WIDTH-1-3*WORD_WIDTH : KEY_WIDTH-4*WORD_WIDTH];
+    W[0] = i_KE_key[KEY_WIDTH-1 : KEY_WIDTH-WORD_WIDTH];
+    W[1] = i_KE_key[KEY_WIDTH-1-WORD_WIDTH : KEY_WIDTH-2*WORD_WIDTH];
+    W[2] = i_KE_key[KEY_WIDTH-1-2*WORD_WIDTH : KEY_WIDTH-3*WORD_WIDTH];
+    W[3] = i_KE_key[KEY_WIDTH-1-3*WORD_WIDTH : KEY_WIDTH-4*WORD_WIDTH];
 
 
     //--------------- Generate remaining words ---------------
