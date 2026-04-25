@@ -1,0 +1,68 @@
+module TWEAK_UPDATE #(
+  parameter PLAINTEXT_WIDTH  = 128,
+  parameter BLOCK_NUMBER = 2
+)(
+  input                        i_clk,
+  input                        i_reset,
+  input  [BLOCK_NUMBER-1:0]    i_tweak_j,
+  input  [PLAINTEXT_WIDTH-1:0] i_old_T,
+  input                        i_tweak_v,
+  output                       o_tweak_v,
+  output [PLAINTEXT_WIDTH-1:0] o_new_T
+);
+  reg  t_v;
+  reg [PLAINTEXT_WIDTH-1:0] NEW_t;
+
+  assign o_new_T = NEW_t;
+  assign o_tweak_v = t_v;
+
+  // ---------------- SEQUENTIAL LOGIC ----------------
+  always @(posedge i_clk or posedge i_reset) begin
+    if (i_reset) begin
+      NEW_t <= {PLAINTEXT_WIDTH{1'b0}};
+      t_v   <= 1'b0;
+    end
+    else begin
+      if (i_tweak_v) begin
+        if (i_tweak_j == 2'd0) begin
+          NEW_t <= i_old_T;           // T0 (no change)
+          t_v   <= 1'b1;
+        end
+        else begin
+          NEW_t <= alpha_mult(i_old_T); // Tj = α × T(j-1)
+          t_v   <= 1'b1;
+        end
+      end
+      else begin
+  //      NEW_t <= {PLAINTEXT_WIDTH{1'b0}};
+        t_v   <= 1'b0;
+      end
+    end
+  end
+
+  // ----------- FUNCTION: ALPHA MULTIPLICATION (GF 2^128) ----------
+function [127:0] alpha_mult;
+  input [127:0] T;
+
+  reg [127:0] T_rev;
+  reg [127:0] shifted;
+  integer i;
+
+begin
+  // -------- REVERSE BYTE ORDER --------
+  for (i = 0; i < 16; i = i + 1)
+    T_rev[8*i +: 8] = T[8*(15-i) +: 8];
+
+  // -------- STANDARD SHIFT --------
+  shifted = {T_rev[126:0], 1'b0};
+
+  if (T_rev[127])
+    shifted = shifted ^ 128'h00000000000000000000000000000087;
+
+  // -------- REVERSE BACK --------
+  for (i = 0; i < 16; i = i + 1)
+    alpha_mult[8*i +: 8] = shifted[8*(15-i) +: 8];
+
+end
+endfunction
+endmodule
