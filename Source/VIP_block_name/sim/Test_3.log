@@ -1,0 +1,84 @@
+ALIB: Library "work" attached.
+work = ./work/work.lib
+MESSAGE "Unit top modules: Test_Bench_Top."
+SUCCESS "Compile success 0 Errors 0 Warnings  Analysis time: 0[s]."
+done
+# Aldec, Inc. Riviera-PRO version 2025.04.139.9738 built for Linux64 on May 30, 2025.
+# HDL, SystemC, and Assertions simulator, debugger, and design environment.
+# (c) 1999-2025 Aldec, Inc. All rights reserved.
+# ELBREAD: Elaboration process.
+# ELBREAD: Elaboration time 0.1 [s].
+# KERNEL: Main thread initiated.
+# KERNEL: Kernel process initialization phase.
+# ELAB2: Elaboration final pass...
+# KERNEL: PLI/VHPI kernel's engine initialization done.
+# PLI: Loading library '/usr/share/Riviera-PRO/bin/libsystf.so'
+# ELAB2: Create instances ...
+# KERNEL: Time resolution set to 1ns.
+# ELAB2: Create instances complete.
+# SLP: Started
+# SLP: Elaboration phase ...
+# SLP: Elaboration phase ... done : 0.1 [s]
+# SLP: Generation phase ...
+# SLP: Generation phase ... done : 0.3 [s]
+# SLP: Finished : 0.4 [s]
+# SLP: 0 primitives and 1076 (99.91%) other processes in SLP
+# SLP: 2197 (78.46%) signals in SLP and 204 (7.29%) interface signals
+# ELAB2: Elaboration final pass complete - time: 0.4 [s].
+# KERNEL: SLP loading done - time: 0.0 [s].
+# KERNEL: Warning: You are using the Riviera-PRO EDU Edition. The performance of simulation is reduced.
+# KERNEL: Warning: Contact Aldec for available upgrade options - sales@aldec.com.
+# KERNEL: SLP simulation initialization done - time: 0.0 [s].
+# KERNEL: Kernel process initialization done.
+# Allocation: Simulator allocated 5897 kB (elbread=466 elab2=5379 kernel=51 sdf=0)
+# KERNEL: ASDB file was created in location /home/runner/dataset.asdb
+# KERNEL: ------ TIME = [0] RESET = 1 -------
+# KERNEL: ------ TIME = [20] RESET = 0 -------
+# KERNEL: RAISE COUNT INC = 1
+# KERNEL: 
+# KERNEL: ----------------------------------[ GENERATOR ]--------------------------------------
+# KERNEL: TIME = 20        Total Block  = 2
+# KERNEL: TIME = 20            i_SECTOR = 33333333330000000000000000000000
+# KERNEL: TIME = 20            KEY - 1  = fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0
+# KERNEL: TIME = 20            KEY - 2  = 22222222222222222222222222222222
+# KERNEL: TIME = 20    i_XTS_PLAINTEXT  = 4444444444444444444444444444444444444444444444444444444444444444
+# KERNEL: TIME = 20    o_XTS_CIPHERTEXT = 0000000000000000000000000000000000000000000000000000000000000000
+# KERNEL: 
+# KERNEL: ----------------------------------[ DRIVER ]--------------------------------------
+# KERNEL: TIME = 25        Total Block  = 2
+# KERNEL: TIME = 25            i_SECTOR = 33333333330000000000000000000000
+# KERNEL: TIME = 25            KEY - 1  = fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0
+# KERNEL: TIME = 25            KEY - 2  = 22222222222222222222222222222222
+# KERNEL: TIME = 25    i_XTS_PLAINTEXT  = 4444444444444444444444444444444444444444444444444444444444444444
+# KERNEL: TIME = 25    o_XTS_CIPHERTEXT = 0000000000000000000000000000000000000000000000000000000000000000
+# KERNEL: 
+# KERNEL: ----------------------------------[ MONITOR ]--------------------------------------
+# KERNEL: TIME = 1385        Total Block  = 2
+# KERNEL: TIME = 1385            i_SECTOR = 33333333330000000000000000000000
+# KERNEL: TIME = 1385            KEY - 1  = fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0
+# KERNEL: TIME = 1385            KEY - 2  = 22222222222222222222222222222222
+# KERNEL: TIME = 1385    i_XTS_PLAINTEXT  = 4444444444444444444444444444444444444444444444444444444444444444
+# KERNEL: TIME = 1385    o_XTS_CIPHERTEXT = af85336b597afc1a900b2eb21ec949d292df4c047e0b21532186a5971a227a89
+# KERNEL: 
+# KERNEL: ----------------------------------[ SCORE BOARD ]--------------------------------------
+# KERNEL: TIME = 1385        Total Block  = 2
+# KERNEL: TIME = 1385            i_SECTOR = 33333333330000000000000000000000
+# KERNEL: TIME = 1385            KEY - 1  = fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0
+# KERNEL: TIME = 1385            KEY - 2  = 22222222222222222222222222222222
+# KERNEL: TIME = 1385    i_XTS_PLAINTEXT  = 4444444444444444444444444444444444444444444444444444444444444444
+# KERNEL: TIME = 1385    o_XTS_CIPHERTEXT = af85336b597afc1a900b2eb21ec949d292df4c047e0b21532186a5971a227a89
+# KERNEL: BLOCK NUMBER = 1
+# KERNEL: --------------------------- REFERENCE --------------------------------------
+# KERNEL: ***************************************  BLOCK PASSS ***************************************
+# KERNEL: Expected Cipher text = af85336b597afc1a900b2eb21ec949d292df4c047e0b21532186a5971a227a89
+# KERNEL: --------------------------------------------------------------------------
+# KERNEL: RAISE COUNT DEC = 0
+# KERNEL: --------------------------------------------------------------------------------------------------
+# KERNEL: ====================================== TRANSACTION COMPLETE ======================================
+# KERNEL: --------------------------------------------------------------------------------------------------
+# KERNEL:                 1385 reset is called from test
+# RUNTIME: Info: RUNTIME_0068 testbench.sv (53): $finish called.
+# KERNEL: Time: 1385 ns,  Iteration: 1,  Instance: /Test_Bench_Top,  Process: @INITIAL#30_2@.
+# KERNEL: stopped at time: 1385 ns
+# VSIM: Simulation has finished. There are no more test vectors to simulate.
+# VSIM: Simulation has finished.
