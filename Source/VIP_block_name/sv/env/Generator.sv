@@ -7,10 +7,6 @@ class generator;
     this.gen2drv  = gen2drv;
   endfunction
 
-  task main();
-    trans = new();
-  endtask
-
   task send(transaction tr);
     tr.display("GENERATOR");
     gen2drv.put(tr);
