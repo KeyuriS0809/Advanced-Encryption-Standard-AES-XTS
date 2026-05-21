@@ -6,8 +6,8 @@ module Test_Bench_Top;
 
   logic clock;
 
-  intf intff(clock);
-  TEST tst;
+  intf intff(clock);      // Inerface Instace       
+  TEST tst;               // Test Class Instance
 
   XTS_TOP XTS_DUT (.i_clk(intff.i_clk), 
                    .i_reset(intff.i_reset),
@@ -45,8 +45,10 @@ module Test_Bench_Top;
     else
       $error("TEST NOT FOUND ENTER VALID TEST NAME");
 
-//     tst.reset();
-    tst.run();
+    fork
+      tst.reset();             // Reset Call From test class
+      tst.run();               // run task call for test which we want to run
+    join
 
     wait(files_pkg::raise_cnt == 0);
     $display($time,, "reset is called from test");
