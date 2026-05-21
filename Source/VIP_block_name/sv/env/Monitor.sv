@@ -10,25 +10,31 @@ class monitor;
   endfunction
 
   task main;
-    trans = new();
 
     forever begin
-      
-      @(vif.o_XTS_DONE);
-//       @(posedge vif.i_clk);
-      @(negedge vif.i_clk);
 
-      trans.i_XTS_START      =  vif.i_XTS_START;
-      trans.i_J              =  vif.i_J;
-      trans.i_SECTOR         =  vif.i_SECTOR;
-      trans.i_XTS_PLAINTEXT  =  vif.i_XTS_PLAINTEXT;
-      trans.i_KEY_1          =  vif.i_KEY_1;
-      trans.i_KEY_2          =  vif.i_KEY_2;
-      trans.o_XTS_DONE       =  vif.o_XTS_DONE;
-      trans.o_XTS_CIPHERTEXT =  vif.o_XTS_CIPHERTEXT;
+      if (vif.i_reset) begin
+        $display("----- TIME = %0t Reset Detected in [MONITOR] Reset = %0b  -----",$time, vif.i_reset);
+        wait(!vif.i_reset);
+      end
+      else begin 
+        trans = new();
+        
+        @(vif.o_XTS_DONE);
+        @(posedge vif.i_clk);
+        
+        trans.i_XTS_START      =  vif.i_XTS_START;
+        trans.i_J              =  vif.i_J;
+        trans.i_SECTOR         =  vif.i_SECTOR;
+        trans.i_XTS_PLAINTEXT  =  vif.i_XTS_PLAINTEXT;
+        trans.i_KEY_1          =  vif.i_KEY_1;
+        trans.i_KEY_2          =  vif.i_KEY_2;
+        trans.o_XTS_DONE       =  vif.o_XTS_DONE;
+        trans.o_XTS_CIPHERTEXT =  vif.o_XTS_CIPHERTEXT;
 
-      mon2score.put(trans);      
-      trans.display("MONITOR");
+        mon2score.put(trans);      
+        trans.display("MONITOR");
+      end
     end
   endtask
 endclass
