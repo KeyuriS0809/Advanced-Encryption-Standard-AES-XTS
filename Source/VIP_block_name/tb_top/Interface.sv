@@ -1,7 +1,7 @@
-interface intf(input logic i_clk);
+interface my_intf(input logic i_clk);
   
-  logic                        i_reset;
-  logic                        i_XTS_START;
+  logic                         i_reset;
+  logic                         i_XTS_START;
   
   logic [`BLOCK_NUMBER-1:0]     i_J;             // Block Number
   logic [`CIPHERTEXT_WIDTH-1:0] i_SECTOR;        // Sector Number - i
