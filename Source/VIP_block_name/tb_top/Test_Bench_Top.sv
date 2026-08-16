@@ -1,4 +1,5 @@
 `include "Package.sv"
+import uvm_pkg::*;
 import files_pkg :: *; 
 `include "Interface.sv"
 
@@ -6,8 +7,7 @@ module Test_Bench_Top;
 
   logic clock;
 
-  intf intff(clock);      // Inerface Instace       
-  TEST tst;               // Test Class Instance
+  my_intf intff(clock);      // Inerface Instace       
 
   XTS_TOP XTS_DUT (.i_clk(intff.i_clk), 
                    .i_reset(intff.i_reset),
@@ -24,35 +24,12 @@ module Test_Bench_Top;
   always #5 clock = ~clock;
 
   initial begin 
+    clock = 0;
     $dumpfile("dump.vcd"); $dumpvars;
   end
-
+  
   initial begin
-
-    clock = 1;  
-
-    tst = new(intff);
-
-    if($test$plusargs("All_zero"))
-      tst = All_zero::new(intff);
-
-    else if($test$plusargs("Test_2"))
-      tst = Test_2::new(intff);
-
-    else if($test$plusargs("Test_3"))
-      tst = Test_3::new(intff);
-
-    else
-      $error("TEST NOT FOUND ENTER VALID TEST NAME");
-
-    fork
-      tst.reset();             // Reset Call From test class
-      tst.run();               // run task call for test which we want to run
-    join
-
-    wait(files_pkg::raise_cnt == 0);
-    $display($time,, "reset is called from test");
-    $finish;
+    uvm_config_db #(virtual my_intf)::set(null, "*", "vif", intff);
+    run_test("Random_Test");
   end
-
 endmodule
