@@ -9,6 +9,7 @@ package files_pkg;
   `define CIPHERTEXT_WIDTH  128
 
   `include "seq_item.sv"
+  `include "Env_config.sv"
 
   // ----- Coverage files -------
   `include "Covergroups.sv"
@@ -18,17 +19,17 @@ package files_pkg;
 
   `include "sequence.sv"
   `include "sequencer.sv"
+  `include "virtual_sequence.sv"
   `include "Driver.sv"
   `include "Monitor.sv"
   `include "ScoreBoard.sv"
   `include "agent.sv"
   `include "ENV.sv"
-  `include "Base_test.sv"
 
   // -------- TEST FILES ---------
-  `include "All_zero.sv"
-  `include "Test_2.sv"
-  `include "Test_3.sv"
+//   `include "All_zero.sv"
+//   `include "Test_2.sv"
+//   `include "Test_3.sv"
   `include "Multi_Test.sv"
   `include "random_test.sv"
 
